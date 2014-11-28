@@ -1,6 +1,6 @@
 <package>
   <name>rqt_annotation_data</name>
-  <version>0.1.0</version>
+  <version>0.0.0</version>
   <description>
      World Canvas Framework Annotations Data Editor.
      Auxiliary tool for the World Canvas Editor: allows creating a ROS message with the associated

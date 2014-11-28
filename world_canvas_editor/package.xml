@@ -1,6 +1,6 @@
 <package>
   <name>world_canvas_editor</name>
-  <version>0.1.0</version>
+  <version>0.0.0</version>
   <description>
      World Canvas Framework Annotations Editor.
      Tool for adding semantic information (called annotations) to geometric maps.
