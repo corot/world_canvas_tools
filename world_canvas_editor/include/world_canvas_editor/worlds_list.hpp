@@ -41,10 +41,11 @@ Q_SIGNALS:
 
 private:
   int        current_world_;
-  int       world_to_clone_;
+  int       selected_world_;
   QMenu*      context_menu_;
   QAction*   act_new_world_;
   QAction* act_clone_world_;
+  QAction* act_add_new_map_;
 
   bool loadGeometricMap(const std::string& world_name);
 
@@ -53,6 +54,7 @@ private Q_SLOTS:
   void treeDoubleClicked(QTreeWidgetItem *item, int column);
   void newWorld();
   void cloneWorld();
+  void addNewMap();
 };
 
 } // namespace wcf

@@ -40,11 +40,13 @@ WorldsList::WorldsList(QWidget* parent)
 
   act_new_world_ = context_menu_->addAction("New world");
   act_clone_world_ = context_menu_->addAction("Clone world");
+  act_add_new_map_ = context_menu_->addAction("Add new map");
 
   connect(this, SIGNAL(customContextMenuRequested(const QPoint)),
           this, SLOT(contextMenuRequested(QPoint)));
   connect(act_new_world_, SIGNAL(triggered()), this, SLOT(newWorld()));
   connect(act_clone_world_, SIGNAL(triggered()), this, SLOT(cloneWorld()));
+  connect(act_add_new_map_, SIGNAL(triggered()), this, SLOT(addNewMap()));
 
   ROS_INFO("World collection ready!");
 }
@@ -63,11 +65,12 @@ void WorldsList::treeDoubleClicked(QTreeWidgetItem *item, int column)
 
 void WorldsList::contextMenuRequested(QPoint point)
 {
-  // Enable clone world option if cursor is over a world
+  // Enable clone world and add new map options if cursor is over a world
   act_clone_world_->setDisabled(! this->indexAt(point).isValid());
+  act_add_new_map_->setDisabled(! this->indexAt(point).isValid());
 
-  // Check which world is under cursor in case the user selects "clone world" action
-  world_to_clone_ = -1;
+  // Check which world is under cursor in case the user selects "clone world" or add new map action
+  selected_world_ = -1;
   if (this->indexAt(point).isValid() == false)
   {
     ROS_DEBUG("Cursor is not over a world; option disabled");
@@ -75,12 +78,12 @@ void WorldsList::contextMenuRequested(QPoint point)
   else if (this->indexAt(point).parent().isValid() == false)
   {
     // Already at top level, i.e. over a world name
-    world_to_clone_ = this->indexAt(point).row();
+    selected_world_ = this->indexAt(point).row();
   }
   else
   {
     // Move to top level to get the world name for the annotation under cursor
-    world_to_clone_ = this->indexAt(point).parent().row();
+    selected_world_ = this->indexAt(point).parent().row();
   }
 
   // Ready to show the popup menu
@@ -111,15 +114,39 @@ void WorldsList::newWorld()
 
 void WorldsList::cloneWorld()
 {
-  if (world_to_clone_ == -1)
+  if (selected_world_ == -1)
     ROS_ERROR("Cursor is not over a world? This should be avoided by disabling the clone action!");
   else
-    ROS_DEBUG("Clone world '%s'", world_names[world_to_clone_].c_str());
+    ROS_DEBUG("Clone world '%s'", world_names[selected_world_].c_str());
 
   // Clone world is TODO    :(
 
 
-  world_to_clone_ = -1;
+  selected_world_ = -1;
+}
+
+void WorldsList::addNewMap()
+{
+  if (selected_world_ == -1)
+    ROS_ERROR("Cursor is not over a world? This should be avoided by disabling the clone action!");
+  else
+    ROS_DEBUG("Add a new geometric map to world '%s'", world_names[selected_world_].c_str());
+
+  // Ask user to provide a geometric map for the selected world
+  if (loadGeometricMap(world_names[selected_world_]) == false)
+  {
+    ROS_WARN("Add a new map to world '%s' cancelled or failed", world_names[selected_world_].c_str());
+  }
+  else if (selected_world_ == current_world_)
+  {
+    // Reflect changes if we have added the new map to the current world
+    annotations_.reset(new AnnotationsList(world_names[current_world_]));
+    updateWidget();
+
+    // Request server to publish the new geometric map; we don't have still a mechanism to handle
+    // worlds with more than one map, so... the map shown on RViz will be undefined by now! (TODO)
+    annotations_->publish("map", "nav_msgs/OccupancyGrid", true, false);
+  }
 }
 
 void WorldsList::setCurrent(int index)
@@ -135,7 +162,8 @@ void WorldsList::setCurrent(int index)
     // Request server to publish the geometric map for the selected world
     annotations_->publish("map", "nav_msgs/OccupancyGrid", true, false);
 
-    // TODO: we should notify somehow if this world has no geometric map to show
+    // TODO: we should notify somehow if this world has no geometric map to show;
+    // RViz will keep showing the previous map, what can be very misguiding
   }
 }
 
