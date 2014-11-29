@@ -239,7 +239,7 @@ bool WorldsList::loadGeometricMap(const std::string& world_name)
   catch (ros::Exception& e)
   {
     QMessageBox::critical(this, tr("Annotations Editor"),
-                                tr("Load map failed:\n%s") + QString(e.what()),
+                                tr("Load map failed:\n") + QString(e.what()),
                                 QMessageBox::Ok);
     return false;
   }
