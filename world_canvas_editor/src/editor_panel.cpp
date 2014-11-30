@@ -46,17 +46,17 @@ namespace wcf
 RVizPluginEditor::RVizPluginEditor(QWidget* parent)
   : rviz::Panel(parent), ui_(new Ui::EditorPanel())
 {
-  // set up the GUI
+  // Set up the GUI
   ui_->setupUi(this);
 
-  // connect main buttons to their associated actions
+  // Connect main buttons to their associated actions
   connect( ui_->newAnnButton, SIGNAL( clicked() ), this, SLOT( newButtonClicked() ));
   connect( ui_->editMsgButton, SIGNAL( clicked() ), this, SLOT( msgButtonClicked() ));
   connect( ui_->delAnnButton, SIGNAL( clicked() ), this, SLOT( delButtonClicked() ));
   connect( ui_->saveAnnButton, SIGNAL( clicked() ), this, SLOT( saveButtonClicked() ));
   connect( ui_->pickColorButton, SIGNAL( clicked() ), this, SLOT( pickColorClicked() ));
 
-  // connect all the other widgets to the update annotation view action
+  // Connect all the other widgets to the update annotation view action...
   connect( ui_->lDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
   connect( ui_->wDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
   connect( ui_->hDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
@@ -72,6 +72,9 @@ RVizPluginEditor::RVizPluginEditor(QWidget* parent)
   connect( ui_->keywordsTextEdit, SIGNAL( textChanged() ), this, SLOT( updateAnnotation() ));
   connect( ui_->relatedsTextEdit, SIGNAL( textChanged() ), this, SLOT( updateAnnotation() ));
 
+  // ...and disable until we start editing an annotation
+  enableWidgets(false);
+  
   // Store worlds and annotations tree widget as a private attribute for easy access
   worlds_list_.reset(ui_->annsTreeWidget);
 
@@ -108,6 +111,7 @@ void RVizPluginEditor::newButtonClicked()
   annot2widgets(current_annot_);
   showCurrentAnnot();
 
+  enableWidgets(true);
   ui_->editMsgButton->setEnabled(true);
   ui_->delAnnButton->setEnabled(false);
   ui_->saveAnnButton->setEnabled(false);
@@ -239,6 +243,7 @@ void RVizPluginEditor::delButtonClicked()
   annot2widgets(empty);
   hideCurrentAnnot();
 
+  enableWidgets(false);
   ui_->editMsgButton->setEnabled(false);
   ui_->delAnnButton->setEnabled(false);
   ui_->saveAnnButton->setEnabled(true);
@@ -325,6 +330,7 @@ void RVizPluginEditor::worldSelected(int index)
   annot2widgets(empty);
   hideCurrentAnnot();
 
+  enableWidgets(false);
   ui_->editMsgButton->setEnabled(false);
   ui_->delAnnButton->setEnabled(false);
   ui_->saveAnnButton->setEnabled(false);
@@ -353,6 +359,7 @@ void RVizPluginEditor::annotSelected(int index)
   annot2widgets(current_annot_);
   showCurrentAnnot();
 
+  enableWidgets(true);
   ui_->editMsgButton->setEnabled(true);
   ui_->delAnnButton->setEnabled(true);
   ui_->saveAnnButton->setEnabled(false);
@@ -391,6 +398,24 @@ void RVizPluginEditor::updateAnnotation()
     ui_->saveAnnButton->setEnabled(true);
 }
 
+void RVizPluginEditor::enableWidgets(bool enable)
+{
+  ui_->lDoubleSpinBox->setEnabled(enable);
+  ui_->wDoubleSpinBox->setEnabled(enable);
+  ui_->hDoubleSpinBox->setEnabled(enable);
+  ui_->xDoubleSpinBox->setEnabled(enable);
+  ui_->yDoubleSpinBox->setEnabled(enable);
+  ui_->zDoubleSpinBox->setEnabled(enable);
+  ui_->rollDoubleSpinBox->setEnabled(enable);
+  ui_->pitchDoubleSpinBox->setEnabled(enable);
+  ui_->yawDoubleSpinBox->setEnabled(enable);
+  ui_->nameLineEdit->setEnabled(enable);
+  ui_->typeLineEdit->setEnabled(enable);
+  ui_->shapeComboBox->setEnabled(enable);
+  ui_->keywordsTextEdit->setEnabled(enable);
+  ui_->relatedsTextEdit->setEnabled(enable);
+}
+
 void RVizPluginEditor::widgets2annot(world_canvas_msgs::Annotation::Ptr annot)
 {
   assert(annot);
@@ -415,11 +440,11 @@ void RVizPluginEditor::widgets2annot(world_canvas_msgs::Annotation::Ptr annot)
                                ui_->zDoubleSpinBox->value()));
   tf::poseTFToMsg(tf, annot->pose.pose.pose);
 
-  // Rotation also as a quaternion; just for information, as it's not editable
-  ui_->xQuatLineEdit->setText(QString::number(tf.getRotation().x()));
-  ui_->yQuatLineEdit->setText(QString::number(tf.getRotation().y()));
-  ui_->zQuatLineEdit->setText(QString::number(tf.getRotation().z()));
-  ui_->wQuatLineEdit->setText(QString::number(tf.getRotation().w()));
+  // Show rotation also as a quaternion; just for information, as it's not editable
+  ui_->xQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.x));
+  ui_->yQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.y));
+  ui_->zQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.z));
+  ui_->wQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.w));
 
   annot->keywords.clear();
   QStringList list = ui_->keywordsTextEdit->toPlainText().split("\n", QString::SkipEmptyParts);
@@ -491,6 +516,12 @@ void RVizPluginEditor::annot2widgets(world_canvas_msgs::Annotation::Ptr annot)
   ui_->rollDoubleSpinBox->setValue(mtk::roll(annot->pose.pose.pose));
   ui_->pitchDoubleSpinBox->setValue(mtk::pitch(annot->pose.pose.pose));
   ui_->yawDoubleSpinBox->setValue(tf::getYaw(annot->pose.pose.pose.orientation));  // TODO add yaw() to mtk if I change something else there
+
+  // Show rotation also as a quaternion; just for information, as it's not editable
+  ui_->xQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.x));
+  ui_->yQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.y));
+  ui_->zQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.z));
+  ui_->wQuatLineEdit->setText(QString::number(annot->pose.pose.pose.orientation.w));
 
   // TODO  // TODO  // TODO  annot->pose.header.frame_id = "/map";
 

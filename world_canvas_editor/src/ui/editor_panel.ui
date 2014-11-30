@@ -538,6 +538,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="xQuatLineEdit">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -564,6 +567,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="yQuatLineEdit">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -590,6 +596,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="zQuatLineEdit">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -616,6 +625,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="wQuatLineEdit">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                <horstretch>0</horstretch>
