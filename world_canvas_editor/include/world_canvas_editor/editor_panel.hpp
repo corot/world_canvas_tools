@@ -105,6 +105,7 @@ protected:
   world_canvas_msgs::AnnotationData::Ptr current_data_;
 
   bool discardCurrentChanges();
+  void blockSignals(bool block);
   void enableWidgets(bool enable);
   void annot2widgets(world_canvas_msgs::Annotation::Ptr annot);
   void widgets2annot(world_canvas_msgs::Annotation::Ptr annot);

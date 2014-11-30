@@ -107,6 +107,8 @@ void RVizPluginEditor::newButtonClicked()
   current_annot_->shape = visualization_msgs::Marker::TEXT_VIEW_FACING; // reasonable default
   current_annot_->color.a = 0.5;  // Avoid a rather confusing invisible shape
 
+  current_data_ = NULL; // Clean data; will be added when user clicks on 'data' button
+
   // Update GUI
   annot2widgets(current_annot_);
   showCurrentAnnot();
@@ -398,6 +400,24 @@ void RVizPluginEditor::updateAnnotation()
     ui_->saveAnnButton->setEnabled(true);
 }
 
+void RVizPluginEditor::blockSignals(bool block)
+{
+  ui_->lDoubleSpinBox->blockSignals(block);
+  ui_->wDoubleSpinBox->blockSignals(block);
+  ui_->hDoubleSpinBox->blockSignals(block);
+  ui_->xDoubleSpinBox->blockSignals(block);
+  ui_->yDoubleSpinBox->blockSignals(block);
+  ui_->zDoubleSpinBox->blockSignals(block);
+  ui_->rollDoubleSpinBox->blockSignals(block);
+  ui_->pitchDoubleSpinBox->blockSignals(block);
+  ui_->yawDoubleSpinBox->blockSignals(block);
+  ui_->nameLineEdit->blockSignals(block);
+  ui_->typeLineEdit->blockSignals(block);
+  ui_->shapeComboBox->blockSignals(block);
+  ui_->keywordsTextEdit->blockSignals(block);
+  ui_->relatedsTextEdit->blockSignals(block);
+}
+
 void RVizPluginEditor::enableWidgets(bool enable)
 {
   ui_->lDoubleSpinBox->setEnabled(enable);
@@ -491,6 +511,8 @@ void RVizPluginEditor::annot2widgets(world_canvas_msgs::Annotation::Ptr annot)
 {
   assert(annot);
 
+  blockSignals(true);
+
   ui_->nameLineEdit->setText(annot->name.c_str());
   ui_->typeLineEdit->setText(annot->type.c_str());
 
@@ -545,6 +567,8 @@ void RVizPluginEditor::annot2widgets(world_canvas_msgs::Annotation::Ptr annot)
       ROS_WARN("Discarding relationship: %s", e.what());
     }
   }
+
+  blockSignals(false);
 }
 
 bool RVizPluginEditor::discardCurrentChanges()

@@ -76,7 +76,7 @@ bool AnnotationsList::add(const world_canvas_msgs::Annotation& annotation,
 bool AnnotationsList::update(const world_canvas_msgs::Annotation& annotation,
                              const world_canvas_msgs::AnnotationData& annot_data)
 {
-  if (AnnotationCollection::add(annotation, annot_data) == true)
+  if (AnnotationCollection::update(annotation, annot_data) == true)
   {
     // Reflect changes on the tree widget
     assert(tree_item_);
