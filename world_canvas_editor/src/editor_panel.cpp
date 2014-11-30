@@ -49,13 +49,28 @@ RVizPluginEditor::RVizPluginEditor(QWidget* parent)
   // set up the GUI
   ui_->setupUi(this);
 
-  // connect buttons to actions
+  // connect main buttons to their associated actions
   connect( ui_->newAnnButton, SIGNAL( clicked() ), this, SLOT( newButtonClicked() ));
-  connect( ui_->updateButton, SIGNAL( clicked() ), this, SLOT( updButtonClicked() ));
   connect( ui_->editMsgButton, SIGNAL( clicked() ), this, SLOT( msgButtonClicked() ));
   connect( ui_->delAnnButton, SIGNAL( clicked() ), this, SLOT( delButtonClicked() ));
   connect( ui_->saveAnnButton, SIGNAL( clicked() ), this, SLOT( saveButtonClicked() ));
   connect( ui_->pickColorButton, SIGNAL( clicked() ), this, SLOT( pickColorClicked() ));
+
+  // connect all the other widgets to the update annotation view action
+  connect( ui_->lDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->wDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->hDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->xDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->yDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->zDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->rollDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->pitchDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->yawDoubleSpinBox, SIGNAL( valueChanged(double) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->nameLineEdit, SIGNAL( textChanged(QString) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->typeLineEdit, SIGNAL( textChanged(QString) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->shapeComboBox, SIGNAL( currentIndexChanged(int) ), this, SLOT( updateAnnotation() ));
+  connect( ui_->keywordsTextEdit, SIGNAL( textChanged() ), this, SLOT( updateAnnotation() ));
+  connect( ui_->relatedsTextEdit, SIGNAL( textChanged() ), this, SLOT( updateAnnotation() ));
 
   // Store worlds and annotations tree widget as a private attribute for easy access
   worlds_list_.reset(ui_->annsTreeWidget);
@@ -93,24 +108,10 @@ void RVizPluginEditor::newButtonClicked()
   annot2widgets(current_annot_);
   showCurrentAnnot();
 
-  ui_->updateButton->setEnabled(true);
   ui_->editMsgButton->setEnabled(true);
   ui_->delAnnButton->setEnabled(false);
   ui_->saveAnnButton->setEnabled(false);
   ui_->pickColorButton->setEnabled(true);
-}
-
-void RVizPluginEditor::updButtonClicked()
-{
-  ROS_DEBUG("Update annotation");
-
-  widgets2annot(current_annot_);
-  showCurrentAnnot();
-  changes_saved_ = false;
-
-  // Now it makes sense to save but only if we have already annotation's data
-  if (current_data_)
-    ui_->saveAnnButton->setEnabled(true);
 }
 
 void RVizPluginEditor::msgButtonClicked()
@@ -238,7 +239,6 @@ void RVizPluginEditor::delButtonClicked()
   annot2widgets(empty);
   hideCurrentAnnot();
 
-  ui_->updateButton->setEnabled(false);
   ui_->editMsgButton->setEnabled(false);
   ui_->delAnnButton->setEnabled(false);
   ui_->saveAnnButton->setEnabled(true);
@@ -325,7 +325,6 @@ void RVizPluginEditor::worldSelected(int index)
   annot2widgets(empty);
   hideCurrentAnnot();
 
-  ui_->updateButton->setEnabled(false);
   ui_->editMsgButton->setEnabled(false);
   ui_->delAnnButton->setEnabled(false);
   ui_->saveAnnButton->setEnabled(false);
@@ -354,7 +353,6 @@ void RVizPluginEditor::annotSelected(int index)
   annot2widgets(current_annot_);
   showCurrentAnnot();
 
-  ui_->updateButton->setEnabled(true);
   ui_->editMsgButton->setEnabled(true);
   ui_->delAnnButton->setEnabled(true);
   ui_->saveAnnButton->setEnabled(false);
@@ -374,6 +372,23 @@ void RVizPluginEditor::pickColorClicked()
   current_color_ = QColorDialog::getColor(current_color_, this, "Pick annotation color",
                                           QColorDialog::ShowAlphaChannel);
   ui_->colorLabel->setStyleSheet(QString("background-color: %1").arg(current_color_.name()));
+  updateAnnotation();
+}
+
+void RVizPluginEditor::updateAnnotation()
+{
+  if (! current_annot_)  // no annotation created/selected; nothing to do, still
+    return;
+
+  ROS_DEBUG("Update annotation");
+
+  widgets2annot(current_annot_);
+  showCurrentAnnot();
+  changes_saved_ = false;
+
+  // Now it makes sense to save but only if we have already annotation's data
+  if (current_data_)
+    ui_->saveAnnButton->setEnabled(true);
 }
 
 void RVizPluginEditor::widgets2annot(world_canvas_msgs::Annotation::Ptr annot)
@@ -400,6 +415,12 @@ void RVizPluginEditor::widgets2annot(world_canvas_msgs::Annotation::Ptr annot)
                                ui_->zDoubleSpinBox->value()));
   tf::poseTFToMsg(tf, annot->pose.pose.pose);
 
+  // Rotation also as a quaternion; just for information, as it's not editable
+  ui_->xQuatLineEdit->setText(QString::number(tf.getRotation().x()));
+  ui_->yQuatLineEdit->setText(QString::number(tf.getRotation().y()));
+  ui_->zQuatLineEdit->setText(QString::number(tf.getRotation().z()));
+  ui_->wQuatLineEdit->setText(QString::number(tf.getRotation().w()));
+
   annot->keywords.clear();
   QStringList list = ui_->keywordsTextEdit->toPlainText().split("\n", QString::SkipEmptyParts);
   int dup = list.removeDuplicates();
@@ -425,9 +446,9 @@ void RVizPluginEditor::widgets2annot(world_canvas_msgs::Annotation::Ptr annot)
     std::vector<world_canvas_msgs::Annotation> anns = worlds_list_->annotations_->getAnnotations(list[i].toStdString());
     if (anns.size() == 0)
     {
-      ROS_WARN("No relationship fetched for name '%s'", list[i].toStdString().c_str());
+      // ROS_WARN("No relationship fetched for name '%s'", list[i].toStdString().c_str());
       continue;
-      // TODO show dialog or other info to the user
+      // TODO show dialog or other info to the user, for example on pressing save
     }
 
     for (int j = 0; j < anns.size(); ++j)

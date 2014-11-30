@@ -79,13 +79,13 @@ public:
   // Next come a couple of public Qt slots.
 public Q_SLOTS:
   void newButtonClicked();
-  void updButtonClicked();
   void msgButtonClicked();
   void delButtonClicked();
   void saveButtonClicked();
   void pickColorClicked();
   void worldSelected(int index);
   void annotSelected(int index);
+  void updateAnnotation();
 
   // Here we declare some internal slots.
 protected Q_SLOTS:
