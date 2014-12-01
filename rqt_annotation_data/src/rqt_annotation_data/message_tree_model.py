@@ -55,6 +55,8 @@ class MessageTreeModel(MessageTreeModel):
 
         self._item_change_lock = threading.Lock()
         self.itemChanged.connect(self.handle_item_changed)
+        
+        self.annotation = None
 
     def clear(self):
         super(MessageTreeModel, self).clear()
@@ -97,7 +99,7 @@ class MessageTreeModel(MessageTreeModel):
         top_level_row_number = self.remove_message(message_info['message_id'])
         self.add_message(message_info, top_level_row_number)
 
-    def add_message(self, message_info, top_level_row_number=None):
+    def add_message(self, message_info, top_level_row_number=None, annotation=None):
         # recursively create widget items for the message's slots
         parent = self
         slot = message_info['instance']
@@ -110,6 +112,7 @@ class MessageTreeModel(MessageTreeModel):
             'top_level_row_number': top_level_row_number,
             'expressions': message_info['expressions'],
         }
+        self.annotation = annotation
         top_level_row = self._recursive_create_items(parent, slot, slot_name, slot_type, slot_path, **kwargs)
 
     def _get_data_items_for_path(self, slot_name, slot_type, slot_path, **kwargs):
@@ -120,6 +123,42 @@ class MessageTreeModel(MessageTreeModel):
     def _recursive_create_items(self, parent, slot, slot_name, slot_type, slot_path, expressions={}, **kwargs):
         row, is_leaf_node = super(MessageTreeModel, self)._recursive_create_items(parent, slot, slot_name, slot_type, slot_path, expressions=expressions, **kwargs)
         if is_leaf_node:
-            expression_text = expressions.get(slot_path, repr(slot))
-            row[self._column_index['expression']].setText(expression_text)
+            expression_text = ''
+            if self.annotation is not None:
+                expression_text = str(self._get_annot_value(slot_name, slot_type, slot_path))
+            if expression_text:
+                # We found a possibly matching field in the annotation
+                row[self._column_index['expression']].setText(expression_text)
+                self.handle_item_changed(row[-1])
+            else:
+                row[self._column_index['expression']].setText(expressions.get(slot_path, repr(slot)))
         return row
+
+    def _get_annot_value(self, slot_name, slot_type, slot_path):
+        # Look for typical fields that can be matched to annotaion's ones
+        if slot_type == 'string' and slot_path.endswith('name'):
+            return self.annotation.name
+        if slot_type.startswith('float') and slot_path.endswith('length'):
+            return self.annotation.size.x
+        if slot_type.startswith('float') and slot_path.endswith('width'):
+            return self.annotation.size.y
+        if slot_type.startswith('float') and slot_path.endswith('height'):
+            return self.annotation.size.z
+        if slot_type == 'string' and slot_path.endswith('pose/header/frame_id'):
+            return self.annotation.pose.header.frame_id
+        if slot_type == 'float64' and slot_path.endswith('pose/position/x'):
+            return self.annotation.pose.pose.pose.position.x
+        if slot_type == 'float64' and slot_path.endswith('pose/position/y'):
+            return self.annotation.pose.pose.pose.position.y
+        if slot_type == 'float64' and slot_path.endswith('pose/position/z'):
+            return self.annotation.pose.pose.pose.position.z
+        if slot_type == 'float64' and slot_path.endswith('pose/orientation/x'):
+            return self.annotation.pose.pose.pose.orientation.x
+        if slot_type == 'float64' and slot_path.endswith('pose/orientation/y'):
+            return self.annotation.pose.pose.pose.orientation.y
+        if slot_type == 'float64' and slot_path.endswith('pose/orientation/z'):
+            return self.annotation.pose.pose.pose.orientation.z
+        if slot_type == 'float64' and slot_path.endswith('pose/orientation/w'):
+            return self.annotation.pose.pose.pose.orientation.w
+        
+        return ''

@@ -46,8 +46,8 @@ import roslib
 import rospy
 import genpy
 from rqt_gui_py.plugin import Plugin
-from .msg_editor_widget import MsgEditorWidget
 from rqt_py_common.topic_helpers import get_field_type
+from rqt_annotation_data.msg_editor_widget import MsgEditorWidget
 
 import std_msgs.msg
 from world_canvas_msgs.msg import *
@@ -81,7 +81,7 @@ class MsgEditor(Plugin):
         # add our self to the main window
         context.add_widget(self._widget)
         
-        self.annot_name = 'UNKNOWN'
+        self.annotation = None
         self.edit_data_srv = \
             rospy.Service('/__edit_annotation_data__', EditAnnotationsData, self.on_edit_data_srv)
 
@@ -89,7 +89,7 @@ class MsgEditor(Plugin):
         # Request from the annotations editor
         # TODO: somehow all should be blocked until we receive this request...
         
-        self.annot_name = request.annotation.name
+        self.annotation = request.annotation
         
         if request.action == EditAnnotationsDataRequest.EDIT:
             msg_class = roslib.message.get_message_class(request.data.type)
@@ -194,10 +194,18 @@ class MsgEditor(Plugin):
             'type_name': str(type_name),
             'instance': self._create_message_instance(str(type_name))
         }
-        self._set_message(self.message_info)
+        
+        # Ask for filling the message with annotation's fields likely to be the same
+        answer = QMessageBox.question(self._widget, "Fill Message's Fields", 
+                "Do you want to copy matching fields from the annotation?\n" \
+                "You can change the suggested values later", QMessageBox.Yes, QMessageBox.No)
+        if answer == QMessageBox.Yes:
+            self._set_message(self.message_info, self.annotation)
+        else:
+            self._set_message(self.message_info)
 
-    def _set_message(self, message_info):
-        message_info['annot_name'] = self.annot_name
+    def _set_message(self, message_info, annotation=None):
+        message_info['annot_name'] = self.annotation.name if self.annotation is not None else '__ERROR__'
         message_info['topic_name'] = '/__TOPIC__'
         message_info['message_id'] = 0
         message_info['counter'] = 0
@@ -209,7 +217,7 @@ class MsgEditor(Plugin):
             rospy.Publisher(message_info['topic_name'], type(message_info['instance']), queue_size=1)
 
         self._widget.msg_type_combo_box.setEditText(self.message_info['type_name'])
-        self._widget.message_tree_widget.model().add_message(message_info)
+        self._widget.message_tree_widget.model().add_message(message_info, annotation=annotation)
 
     @Slot(int, str, str, str, object)
     def change_message(self, message_id, topic_name, column_name, new_value, setter_callback):
