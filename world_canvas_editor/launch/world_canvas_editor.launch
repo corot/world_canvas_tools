@@ -5,10 +5,12 @@
  -->
 <launch>
   <!-- World canvas editor -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find world_canvas_editor)/rviz/world_canvas_editor.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find world_canvas_editor)/rviz/world_canvas_editor.rviz">
+    <param name="wcs_namespace" value="world_canvas"/>
+  </node>
   
   <!-- World canvas server -->
-  <include file="$(find world_canvas_server)/launch/world_canvas_server.launch">
+  <include file="$(find world_canvas_server)/launch/world_canvas_server.launch" ns="world_canvas">
   	<arg name="debug" value="true"/>
   </include>
 

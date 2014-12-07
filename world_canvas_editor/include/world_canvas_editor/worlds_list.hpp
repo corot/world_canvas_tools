@@ -49,6 +49,8 @@ private:
 
   bool loadGeometricMap(const std::string& world_name);
 
+  std::string getWcsNamespace();
+
 private Q_SLOTS:
   void contextMenuRequested(QPoint point);
   void treeDoubleClicked(QTreeWidgetItem *item, int column);

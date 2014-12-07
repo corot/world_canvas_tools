@@ -26,7 +26,7 @@ namespace wcf
 {
 
 WorldsList::WorldsList(QWidget* parent)
-  : QTreeWidget(parent), WorldCollection(""), current_world_(-1)
+  : QTreeWidget(parent), WorldCollection(getWcsNamespace()), current_world_(-1)
 {
   updateWidget();
 
@@ -38,6 +38,7 @@ WorldsList::WorldsList(QWidget* parent)
   context_menu_ = new QMenu();
   this->setContextMenuPolicy(Qt::CustomContextMenu);
 
+  srv_namespace  = getWcsNamespace();
   act_new_world_ = context_menu_->addAction("New world");
   act_clone_world_ = context_menu_->addAction("Clone world");
   act_add_new_map_ = context_menu_->addAction("Add new map");
@@ -49,6 +50,18 @@ WorldsList::WorldsList(QWidget* parent)
   connect(act_add_new_map_, SIGNAL(triggered()), this, SLOT(addNewMap()));
 
   ROS_INFO("World collection ready!");
+}
+
+std::string WorldsList::getWcsNamespace()
+{
+  ros::NodeHandle nh("~");
+  std::string wcs_namespace;
+  if (! nh.getParam("wcs_namespace", wcs_namespace))
+    ROS_WARN("World Canvas Server namespace not provided; assuming empty namespace");
+  else
+    ROS_INFO("Using '%s' as World Canvas Server namespace", wcs_namespace.c_str());
+
+  return wcs_namespace;
 }
 
 void WorldsList::treeDoubleClicked(QTreeWidgetItem *item, int column)
@@ -140,7 +153,7 @@ void WorldsList::addNewMap()
   else if (selected_world_ == current_world_)
   {
     // Reflect changes if we have added the new map to the current world
-    annotations_.reset(new AnnotationsList(world_names[current_world_]));
+    annotations_.reset(new AnnotationsList(world_names[current_world_], srv_namespace));
     updateWidget();
 
     // Request server to publish the new geometric map; we don't have still a mechanism to handle
@@ -153,7 +166,7 @@ void WorldsList::setCurrent(int index)
 {
   if (current_world_ != index)
   {
-    annotations_.reset(new AnnotationsList(world_names[index]));
+    annotations_.reset(new AnnotationsList(world_names[index], srv_namespace));
     current_world_ = index;
     updateWidget();
 
@@ -229,7 +242,7 @@ bool WorldsList::loadGeometricMap(const std::string& world_name)
     ros::serialization::OStream stream_arg(reinterpret_cast<uint8_t*>(&map_data.data[4]), size);
     ros::serialization::serialize(stream_arg, map);
 
-    AnnotationCollection ac(world_name);
+    AnnotationCollection ac(world_name, srv_namespace);
     ac.add(map_annot, map_data);
     if (ac.save() == false)
       throw ros::Exception("Save map on database failed");

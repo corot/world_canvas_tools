@@ -17,8 +17,8 @@
 namespace wcf
 {
 
-AnnotationsList::AnnotationsList(const std::string& world)
-               : AnnotationCollection(world), tree_item_(NULL)
+AnnotationsList::AnnotationsList(const std::string& world, const std::string& wcs_namespace)
+               : AnnotationCollection(world, wcs_namespace), tree_item_(NULL)
 {
   this->load();
   this->loadData();

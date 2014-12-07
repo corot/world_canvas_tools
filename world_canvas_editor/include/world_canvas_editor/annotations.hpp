@@ -18,7 +18,7 @@ namespace wcf
 class AnnotationsList : public AnnotationCollection
 {
 public:
-  AnnotationsList(const std::string& world);
+  AnnotationsList(const std::string& world, const std::string& wcs_namespace);
   ~AnnotationsList();
 
   bool add(const world_canvas_msgs::Annotation& annotation,
