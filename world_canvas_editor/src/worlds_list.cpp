@@ -221,8 +221,8 @@ bool WorldsList::loadGeometricMap(const std::string& world_name)
     world_canvas_msgs::AnnotationData map_data;
 
     map_annot.world = world_name;
-    map_annot.id = uuid::toMsg(uuid::fromRandom());
-    map_annot.data_id = uuid::toMsg(uuid::fromRandom());
+    map_annot.id = unique_id::toMsg(unique_id::fromRandom());
+    map_annot.data_id = unique_id::toMsg(unique_id::fromRandom());
     map_annot.name = "2D map";
     map_annot.type = "nav_msgs/OccupancyGrid";
     map_annot.pose.header.frame_id = "/map";  // TODO  part of world????

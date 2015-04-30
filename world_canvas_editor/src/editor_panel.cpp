@@ -74,7 +74,7 @@ RVizPluginEditor::RVizPluginEditor(QWidget* parent)
 
   // ...and disable until we start editing an annotation
   enableWidgets(false);
-  
+
   // Store worlds and annotations tree widget as a private attribute for easy access
   worlds_list_.reset(ui_->annsTreeWidget);
 
@@ -101,7 +101,7 @@ void RVizPluginEditor::newButtonClicked()
 
   current_annot_.reset(new world_canvas_msgs::Annotation);
   current_annot_->world = worlds_list_->getName(worlds_list_->getCurrent());
-  current_annot_->id = uuid::toMsg(uuid::fromRandom());
+  current_annot_->id = unique_id::toMsg(unique_id::fromRandom());
   current_annot_->pose.header.frame_id = "/map";  // TODO  part of world????
   current_annot_->pose.pose.pose.orientation.w = 1.0;  // Avoid non-normalized quaternions
   current_annot_->shape = visualization_msgs::Marker::TEXT_VIEW_FACING; // reasonable default
@@ -163,7 +163,7 @@ void RVizPluginEditor::msgButtonClicked()
   {
     ROS_INFO("Requesting rqt_annotation_data to create annotation's data from scratch");
     srv.request.action = world_canvas_msgs::EditAnnotationsData::Request::NEW;
-    srv.request.data.id = uuid::toMsg(uuid::fromRandom());
+    srv.request.data.id = unique_id::toMsg(unique_id::fromRandom());
     // We provide the uuid, so the plugin doesn't need extra dependency on uuid library
   }
 
@@ -499,7 +499,7 @@ void RVizPluginEditor::widgets2annot(world_canvas_msgs::Annotation::Ptr annot)
     for (int j = 0; j < anns.size(); ++j)
     {
       ROS_DEBUG("Add relationship '%s'/'%s' fetched for name '%s'",
-                anns[j].name.c_str(), uuid::toHexString(anns[j].id).c_str(), list[i].toStdString().c_str());
+                anns[j].name.c_str(), unique_id::toHexString(anns[j].id).c_str(), list[i].toStdString().c_str());
       annot->relationships.push_back(anns[j].id);
     }
   }
